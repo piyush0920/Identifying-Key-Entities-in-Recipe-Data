@@ -124,8 +124,8 @@ Python, pandas, NumPy, scikit-learn, sklearn-crfsuite, spaCy, Matplotlib, Seabor
 ## How to run
 
 ```bash
-git clone https://github.com/piyush0920/recipe-ner-crf.git
-cd recipe-ner-crf
+git clone https://github.com/piyush0920/Identifying-Key-Entities-in-Recipe-Data.git
+cd Identifying-Key-Entities-in-Recipe-Data
 
 pip install pandas numpy matplotlib seaborn scikit-learn joblib spacy sklearn_crfsuite==0.5.0
 python -m spacy download en_core_web_sm
