@@ -68,21 +68,11 @@ The output can feed recipe databases, nutrition calculators, shopping-list gener
 
 ---
 
-## Results
+## Results and evaluation caveat
 
-**Notebook as submitted** (validation set, 2,772 tokens):
+The notebook's originally submitted validation report shows 99.93% token accuracy (2 errors among 2,772 validation tokens). **That figure is not a valid generalization result:** the committed implementation adds a class weight derived from each token's true label to that token's input feature dictionary. This leaks target information into the model features.
 
-| Label | Precision | Recall | F1 | Support |
-|-------|----------:|-------:|---:|--------:|
-| ingredient | 1.00 | 1.00 | 1.00 | 2,053 |
-| quantity | 1.00 | 0.99 | 1.00 | 384 |
-| unit | 0.99 | 1.00 | 1.00 | 335 |
-
-Overall validation accuracy: **99.93%** (2 misclassified tokens out of 2,772).
-
-### A note on these numbers
-
-In the submitted pipeline, the class weight is added to each token's feature dictionary (`features['weight']`). Because that weight is looked up from the token's *true label*, it leaks the answer into the features. When I re-ran the same pipeline with that one feature removed, validation results were:
+A separate diagnostic rerun with that target-derived feature removed reported the following validation results:
 
 | Label | Precision | Recall | F1 |
 |-------|----------:|-------:|---:|
@@ -90,10 +80,7 @@ In the submitted pipeline, the class weight is added to each token's feature dic
 | quantity | 1.000 | 0.987 | 0.993 |
 | unit | 0.972 | 0.922 | 0.946 |
 
-Overall accuracy: **98.6%**. This is the more realistic estimate of how the model generalises, and *unit* is the weakest class. Class weights are better applied through the training routine (for example, sample weights) than as an input feature.
-
----
-
+Overall accuracy in that separate rerun was **98.6%**. This rerun is not yet reproduced by the committed notebook, so treat 98.6% as a corrected diagnostic result rather than a fully reproducible repository result. The next code correction is to remove the `features['weight'] = weight_dict[label]` input feature and apply any class weighting through a training-time weighting mechanism that does not expose the true label as an input.
 ## Limitations and next steps
 
 - Small dataset (257 usable recipes), mostly Indian-cuisine ingredient lists, so performance on other cuisines or formats is untested.
@@ -113,9 +100,8 @@ Python, pandas, NumPy, scikit-learn, sklearn-crfsuite, spaCy, Matplotlib, Seabor
 
 ```
 .
-├── Identifying_Key_Entities_in_Recipe_Data.ipynb   # full workflow: EDA -> features -> CRF -> error analysis
-├── ingredient_and_quantity.json                    # labelled recipe data
-├── crf_model.pkl                                   # trained CRF model (created by the notebook)
+├── Identifying_Key_Entities_in_Recipe_Data_piyush_sharma.ipynb  # EDA, features, CRF, evaluation
+├── ingredient_and_quantity.json                                # labelled recipe data
 └── README.md
 ```
 
@@ -130,19 +116,12 @@ cd Identifying-Key-Entities-in-Recipe-Data
 pip install pandas numpy matplotlib seaborn scikit-learn joblib spacy sklearn_crfsuite==0.5.0
 python -m spacy download en_core_web_sm
 
-jupyter notebook Identifying_Key_Entities_in_Recipe_Data.ipynb
+jupyter notebook Identifying_Key_Entities_in_Recipe_Data_piyush_sharma.ipynb
 ```
 
 The notebook reads `ingredient_and_quantity.json` using a relative path, so keep the JSON file in the same folder as the notebook. Run the cells in order.
 
-**Using the saved model:**
-
-```python
-import joblib
-crf = joblib.load("crf_model.pkl")
-# build features per token with word2features / sent2features from the notebook, then:
-# crf.predict([sent2features(tokens)])
-```
+**Saved model note:** The notebook contains a `joblib.dump` step that creates `crf_model.pkl` when executed. That generated file is not currently committed in the repository. After running the notebook, load it with `joblib.load("crf_model.pkl")` and use the feature-building functions defined in the notebook.
 
 ---
 
